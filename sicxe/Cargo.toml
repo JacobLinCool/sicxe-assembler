@@ -1,0 +1,8 @@
+[package]
+name = "sicxe"
+version = "0.0.0"
+edition = "2021"
+authors = ["Jacob Lin <jacob@csie.cool>"]
+license = "AGPL-3.0"
+
+[dependencies]
