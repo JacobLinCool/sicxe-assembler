@@ -107,8 +107,8 @@ pub fn translate_to_record(program: Vec<Frame>) -> Result<Vec<ObjectRecord>, Str
                             let mut data = vec![];
                             let length = i.is_format4() as u32 + 3;
                             let operand = i.value.eval();
-                            let operand = match operand {
-                                Some(v) => v,
+                            let (operand, external) = match operand {
+                                Some(v) => (v, false),
                                 _ => {
                                     // external reference involved
                                     // create modification record
@@ -169,7 +169,7 @@ pub fn translate_to_record(program: Vec<Frame>) -> Result<Vec<ObjectRecord>, Str
                                         }
                                     }
 
-                                    expr.eval().unwrap()
+                                    (expr.eval().unwrap(), true)
                                 }
                             };
 
@@ -203,7 +203,7 @@ pub fn translate_to_record(program: Vec<Frame>) -> Result<Vec<ObjectRecord>, Str
                                 data.push((operand >> 8) as u8);
                                 data.push(operand as u8);
 
-                                if start == 0 && (i.nixbpe & 0b010000) == 0 {
+                                if start == 0 && (i.nixbpe & 0b010000) == 0 && !external {
                                     m_records.push(Frame::from(
                                         FrameInner::ObjectRecord(ObjectRecord::Modification(
                                             ModificationRecord {
