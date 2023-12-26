@@ -1,5 +1,3 @@
-
-
 use crate::frame::{
     expression::{Expression, ExpressionOperand},
     record::{EndRecord, HeaderRecord, ModificationRecord, ObjectRecord, TextRecord},
@@ -214,14 +212,20 @@ pub fn translate_to_record(program: Vec<Frame>) -> Result<Vec<ObjectRecord>, Str
                                 data.push(nixbpe << 4 | (operand >> 16) as u8);
                                 data.push((operand >> 8) as u8);
                                 data.push(operand as u8);
-                                // m_records.push(Frame::from(
-                                //     FrameInner::ObjectRecord(ObjectRecord::Modify(
-                                //         ModifyRecord {
-                                //             start: pc,
-                                //             length: 5,
-                                //         }
-                                //     ))
-                                //     , frame.label.clone(), frame));
+
+                                if start == 0 && (i.nixbpe & 0b010000) == 0 {
+                                    m_records.push(Frame::from(
+                                        FrameInner::ObjectRecord(ObjectRecord::Modification(
+                                            ModificationRecord {
+                                                start: locctr.unwrap() + 1,
+                                                length: 5,
+                                                symbol: String::new(),
+                                            },
+                                        )),
+                                        frame.label.clone(),
+                                        frame,
+                                    ));
+                                }
                             } else if i.is_immediate() {
                                 if is_number {
                                     let nixbpe = i.nixbpe;
@@ -322,7 +326,7 @@ pub fn translate_to_record(program: Vec<Frame>) -> Result<Vec<ObjectRecord>, Str
                     ));
                 }
                 directive::Directive::WORD(w) => {
-                    let mut data = vec![];                            
+                    let mut data = vec![];
                     let value = w.word.eval();
                     let mut value = match value {
                         Some(v) => v,
@@ -333,15 +337,13 @@ pub fn translate_to_record(program: Vec<Frame>) -> Result<Vec<ObjectRecord>, Str
                             if let Expression::Unsolved(ref mut u) = expr {
                                 if let ExpressionOperand::Symbol(s) = &u.left {
                                     m_records.push(Frame::from(
-                                        FrameInner::ObjectRecord(
-                                            ObjectRecord::Modification(
-                                                ModificationRecord {
-                                                    start: locctr.unwrap() + 1,
-                                                    length: 6,
-                                                    symbol: format!("+{}", s),
-                                                },
-                                            ),
-                                        ),
+                                        FrameInner::ObjectRecord(ObjectRecord::Modification(
+                                            ModificationRecord {
+                                                start: locctr.unwrap() + 1,
+                                                length: 6,
+                                                symbol: format!("+{}", s),
+                                            },
+                                        )),
                                         None,
                                         frame,
                                     ));
@@ -353,19 +355,13 @@ pub fn translate_to_record(program: Vec<Frame>) -> Result<Vec<ObjectRecord>, Str
                                 if let Some(r) = &u.right {
                                     if let ExpressionOperand::Symbol(s) = r {
                                         m_records.push(Frame::from(
-                                            FrameInner::ObjectRecord(
-                                                ObjectRecord::Modification(
-                                                    ModificationRecord {
-                                                        start: locctr.unwrap() + 1,
-                                                        length: 6,
-                                                        symbol: format!(
-                                                            "{}{}",
-                                                            op.clone().unwrap(),
-                                                            s
-                                                        ),
-                                                    },
-                                                ),
-                                            ),
+                                            FrameInner::ObjectRecord(ObjectRecord::Modification(
+                                                ModificationRecord {
+                                                    start: locctr.unwrap() + 1,
+                                                    length: 6,
+                                                    symbol: format!("{}{}", op.clone().unwrap(), s),
+                                                },
+                                            )),
                                             None,
                                             frame,
                                         ));
