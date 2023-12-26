@@ -1,9 +1,10 @@
 [package]
 name = "sicxe-cli"
-version = "0.0.0"
+description = "Yet another SIC/XE assembler. The CLI version."
+version = "0.1.0"
 edition = "2021"
 authors = ["Jacob Lin <jacob@csie.cool>"]
 license = "AGPL-3.0"
 
 [dependencies]
-sicxe = { path = "../sicxe" }
+sicxe = { path = "../sicxe", version = "^0.1.0" }
