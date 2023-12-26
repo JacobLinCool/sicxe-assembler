@@ -64,39 +64,33 @@ pub struct UnsolvedExpression {
 impl Expression {
     pub fn eval(&self) -> Option<i32> {
         match self {
-            Expression::Unsolved(expr) => {
-                match expr.op {
-                    None => match expr.left {
-                        ExpressionOperand::Value(value) => {
-                            Some(value)
-                        }
+            Expression::Unsolved(expr) => match expr.op {
+                None => match expr.left {
+                    ExpressionOperand::Value(value) => Some(value),
+                    _ => None,
+                },
+                _ => {
+                    let left = match expr.left {
+                        ExpressionOperand::Value(value) => Some(value),
                         _ => None,
-                    },
-                    _ => {
-                        let left = match expr.left {
-                            ExpressionOperand::Value(value) => Some(value),
-                            _ => None,
-                        };
-                        let right = match expr.right {
-                            Some(ExpressionOperand::Value(value)) => Some(value),
-                            _ => None,
-                        };
+                    };
+                    let right = match expr.right {
+                        Some(ExpressionOperand::Value(value)) => Some(value),
+                        _ => None,
+                    };
 
-                        
-
-                        match (left, right) {
-                            (Some(left), Some(right)) => match expr.op {
-                                Some(ExpressionOperator::Add) => Some(left + right),
-                                Some(ExpressionOperator::Subtract) => Some(left - right),
-                                Some(ExpressionOperator::Multiply) => Some(left * right),
-                                Some(ExpressionOperator::Divide) => Some(left / right),
-                                None => None,
-                            },
-                            _ => None,
-                        }
+                    match (left, right) {
+                        (Some(left), Some(right)) => match expr.op {
+                            Some(ExpressionOperator::Add) => Some(left + right),
+                            Some(ExpressionOperator::Subtract) => Some(left - right),
+                            Some(ExpressionOperator::Multiply) => Some(left * right),
+                            Some(ExpressionOperator::Divide) => Some(left / right),
+                            None => None,
+                        },
+                        _ => None,
                     }
                 }
-            }
+            },
             Expression::Resolved(value) => Some(*value),
             Expression::Literal(_) => {
                 panic!("Literal expression should be resolved before evaluation")
@@ -119,14 +113,12 @@ impl Expression {
             Expression::Unsolved(expr) => {
                 let mut deps = Vec::new();
 
-                match expr.left {
-                    ExpressionOperand::Symbol(ref symbol) => deps.push(symbol.as_str()),
-                    _ => {}
+                if let ExpressionOperand::Symbol(ref symbol) = expr.left {
+                    deps.push(symbol.as_str())
                 }
 
-                match expr.right {
-                    Some(ExpressionOperand::Symbol(ref symbol)) => deps.push(symbol.as_str()),
-                    _ => {}
+                if let Some(ExpressionOperand::Symbol(ref symbol)) = expr.right {
+                    deps.push(symbol.as_str())
                 }
 
                 deps
@@ -178,8 +170,8 @@ pub fn parse(input: &str) -> Result<Expression, String> {
         return Err("Input is empty".to_string());
     }
 
-    if input.starts_with('=') {
-        return Ok(Expression::Literal(input[1..].to_string()));
+    if let Some(literal) = input.strip_prefix('=') {
+        return Ok(Expression::Literal(literal.to_string()));
     }
 
     if input.chars().all(|c| c.is_ascii_digit()) {

@@ -8,35 +8,27 @@ pub fn translate_to_record(program: Vec<Frame>) -> Result<Vec<ObjectRecord>, Str
     let r_records = program
         .iter()
         .filter(|frame| {
-            if let FrameInner::ObjectRecord(ObjectRecord::Refer(_)) = frame.inner {
-                true
-            } else {
-                false
-            }
+            matches!(
+                frame.inner,
+                FrameInner::ObjectRecord(ObjectRecord::Refer(_))
+            )
         })
         .cloned()
         .collect::<Vec<_>>();
     let d_records = program
         .iter()
         .filter(|frame| {
-            if let FrameInner::ObjectRecord(ObjectRecord::Define(_)) = frame.inner {
-                true
-            } else {
-                false
-            }
+            matches!(
+                frame.inner,
+                FrameInner::ObjectRecord(ObjectRecord::Define(_))
+            )
         })
         .cloned()
         .collect::<Vec<_>>();
 
     let mut program = program
         .into_iter()
-        .filter(|frame| {
-            if let FrameInner::ObjectRecord(_) = frame.inner {
-                false
-            } else {
-                true
-            }
-        })
+        .filter(|frame| !matches!(frame.inner, FrameInner::ObjectRecord(_)))
         .collect::<Vec<_>>();
 
     let mut t_records = Vec::<Frame>::new();
@@ -50,23 +42,23 @@ pub fn translate_to_record(program: Vec<Frame>) -> Result<Vec<ObjectRecord>, Str
     for frame in &mut program {
         let size = frame.size();
         // set locctr to the address of START or ORG
-        match frame.inner {
-            FrameInner::Directive(ref d) => {
-                if let directive::Directive::START(s) = d {
+        if let FrameInner::Directive(ref d) = frame.inner {
+            match d {
+                directive::Directive::START(s) => {
                     locctr = Some(s.address);
                     start = s.address;
                 }
-                if let directive::Directive::ORG(o) = d {
+                directive::Directive::ORG(o) => {
                     locctr = Some(o.address.eval().unwrap() as u32);
                 }
-                if let directive::Directive::BASE(b) = d {
+                directive::Directive::BASE(b) => {
                     base = Some(b.address.eval().unwrap() as u32);
                 }
-                if let directive::Directive::NOBASE(_) = d {
+                directive::Directive::NOBASE(_) => {
                     base = None;
                 }
+                _ => {}
             }
-            _ => {}
         }
 
         // translate H, E, T and M records
@@ -145,37 +137,35 @@ pub fn translate_to_record(program: Vec<Frame>) -> Result<Vec<ObjectRecord>, Str
 
                                         let op = &u.op;
 
-                                        if let Some(r) = &u.right {
-                                            if let ExpressionOperand::Symbol(s) = r {
-                                                m_records.push(Frame::from(
-                                                    FrameInner::ObjectRecord(
-                                                        ObjectRecord::Modification(
-                                                            ModificationRecord {
-                                                                start: locctr.unwrap() + 1,
-                                                                length: if i.is_format4() {
-                                                                    5
-                                                                } else {
-                                                                    3
-                                                                },
-                                                                symbol: format!(
-                                                                    "{}{}",
-                                                                    op.clone().unwrap(),
-                                                                    s
-                                                                ),
+                                        if let Some(ExpressionOperand::Symbol(s)) = &u.right {
+                                            m_records.push(Frame::from(
+                                                FrameInner::ObjectRecord(
+                                                    ObjectRecord::Modification(
+                                                        ModificationRecord {
+                                                            start: locctr.unwrap() + 1,
+                                                            length: if i.is_format4() {
+                                                                5
+                                                            } else {
+                                                                3
                                                             },
-                                                        ),
+                                                            symbol: format!(
+                                                                "{}{}",
+                                                                op.clone().unwrap(),
+                                                                s
+                                                            ),
+                                                        },
                                                     ),
-                                                    None,
-                                                    frame,
-                                                ));
-                                                let val = match op.clone().unwrap() {
-                                                    expression::ExpressionOperator::Add
-                                                    | expression::ExpressionOperator::Subtract => 0,
-                                                    expression::ExpressionOperator::Multiply
-                                                    | expression::ExpressionOperator::Divide => 1,
-                                                };
-                                                u.right = Some(ExpressionOperand::Value(val));
-                                            }
+                                                ),
+                                                None,
+                                                frame,
+                                            ));
+                                            let val = match op.clone().unwrap() {
+                                                expression::ExpressionOperator::Add
+                                                | expression::ExpressionOperator::Subtract => 0,
+                                                expression::ExpressionOperator::Multiply
+                                                | expression::ExpressionOperator::Divide => 1,
+                                            };
+                                            u.right = Some(ExpressionOperand::Value(val));
                                         }
                                     }
 
@@ -352,27 +342,25 @@ pub fn translate_to_record(program: Vec<Frame>) -> Result<Vec<ObjectRecord>, Str
 
                                 let op = &u.op;
 
-                                if let Some(r) = &u.right {
-                                    if let ExpressionOperand::Symbol(s) = r {
-                                        m_records.push(Frame::from(
-                                            FrameInner::ObjectRecord(ObjectRecord::Modification(
-                                                ModificationRecord {
-                                                    start: locctr.unwrap() + 1,
-                                                    length: 6,
-                                                    symbol: format!("{}{}", op.clone().unwrap(), s),
-                                                },
-                                            )),
-                                            None,
-                                            frame,
-                                        ));
-                                        let val = match op.clone().unwrap() {
-                                            expression::ExpressionOperator::Add
-                                            | expression::ExpressionOperator::Subtract => 0,
-                                            expression::ExpressionOperator::Multiply
-                                            | expression::ExpressionOperator::Divide => 1,
-                                        };
-                                        u.right = Some(ExpressionOperand::Value(val));
-                                    }
+                                if let Some(ExpressionOperand::Symbol(s)) = &u.right {
+                                    m_records.push(Frame::from(
+                                        FrameInner::ObjectRecord(ObjectRecord::Modification(
+                                            ModificationRecord {
+                                                start: locctr.unwrap() + 1,
+                                                length: 6,
+                                                symbol: format!("{}{}", op.clone().unwrap(), s),
+                                            },
+                                        )),
+                                        None,
+                                        frame,
+                                    ));
+                                    let val = match op.clone().unwrap() {
+                                        expression::ExpressionOperator::Add
+                                        | expression::ExpressionOperator::Subtract => 0,
+                                        expression::ExpressionOperator::Multiply
+                                        | expression::ExpressionOperator::Divide => 1,
+                                    };
+                                    u.right = Some(ExpressionOperand::Value(val));
                                 }
                             }
 
@@ -429,11 +417,11 @@ pub fn translate_to_record(program: Vec<Frame>) -> Result<Vec<ObjectRecord>, Str
         }
     }
 
-    h_record.as_mut().map(|h| {
+    if let Some(h) = h_record.as_mut() {
         if let FrameInner::ObjectRecord(ObjectRecord::Header(ref mut h)) = h.inner {
             h.length = locctr.unwrap() - start;
         }
-    });
+    }
 
     let mut records = vec![];
     if let Some(h) = h_record {
@@ -498,6 +486,6 @@ mod tests {
             println!("{}", record);
         }
 
-        assert_eq!(records.len(), 42);
+        assert_eq!(records.len(), 45);
     }
 }

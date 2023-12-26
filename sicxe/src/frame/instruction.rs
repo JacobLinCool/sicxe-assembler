@@ -352,8 +352,8 @@ impl Display for Instruction {
         match self {
             Instruction::Format1(ref i) => write!(f, "op: 0x{:02X}", i.opcode),
             Instruction::Format2(ref i) => {
-                let r1 = u8::from_str_radix(&i.register1.to_string(), 10).unwrap();
-                let r2 = u8::from_str_radix(&i.register2.to_string(), 10).unwrap();
+                let r1 = i.register1.to_string().parse::<u8>().unwrap();
+                let r2 = i.register2.to_string().parse::<u8>().unwrap();
                 write!(f, "op: 0x{:02X}, r1: {:01X}, r2: {:01X}", i.opcode, r1, r2)
             },
             Instruction::Format34(ref i) => {

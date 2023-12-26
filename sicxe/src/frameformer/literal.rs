@@ -28,16 +28,13 @@ pub fn dump_literals(program: Vec<Frame>) -> Vec<Frame> {
                 }
                 _ => {}
             },
-            FrameInner::Instruction(i) => match i {
-                instruction::Instruction::Format34(ref mut i) => {
-                    if let Some(literal) = get_literal(i) {
-                        let reference =
-                            get_literal_reference(&mut literal_pool, literal, &mut literal_count);
-                        i.value = Box::new(parse(&reference).unwrap());
-                    }
+            FrameInner::Instruction(instruction::Instruction::Format34(ref mut i)) => {
+                if let Some(literal) = get_literal(i) {
+                    let reference =
+                        get_literal_reference(&mut literal_pool, literal, &mut literal_count);
+                    i.value = Box::new(parse(&reference).unwrap());
                 }
-                _ => {}
-            },
+            }
             _ => {}
         }
 

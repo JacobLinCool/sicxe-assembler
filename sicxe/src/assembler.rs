@@ -76,10 +76,8 @@ pub fn optimize(records: Vec<ObjectRecord>) -> String {
     while !defines.is_empty() {
         let mut line = "D".to_string();
         for _ in 0..6 {
-            if let Some(define) = defines.pop() {
-                if let ObjectRecord::Define(define) = define {
-                    line.push_str(&format!("{: <6}{:06X}", define.name, define.value));
-                }
+            if let Some(ObjectRecord::Define(define)) = defines.pop() {
+                line.push_str(&format!("{: <6}{:06X}", define.name, define.value));
             }
         }
         optimized.push_str(&format!("{}\n", line));
@@ -90,10 +88,8 @@ pub fn optimize(records: Vec<ObjectRecord>) -> String {
     while !refers.is_empty() {
         let mut line = "R".to_string();
         for _ in 0..12 {
-            if let Some(refer) = refers.pop() {
-                if let ObjectRecord::Refer(refer) = refer {
-                    line.push_str(&format!("{: <6}", refer.name));
-                }
+            if let Some(ObjectRecord::Refer(refer)) = refers.pop() {
+                line.push_str(&format!("{: <6}", refer.name));
             }
         }
         optimized.push_str(&format!("{}\n", line));
@@ -110,9 +106,7 @@ pub fn optimize(records: Vec<ObjectRecord>) -> String {
                     let len = current_line.len() / 2;
                     optimized.push_str(&format!(
                         "T{:06X}{:02X}{}\n",
-                        current_start,
-                        len,
-                        current_line
+                        current_start, len, current_line
                     ));
                 }
                 current_line = String::new();

@@ -34,12 +34,11 @@ pub fn resolve_symbols(program: Vec<Frame>) -> Result<Vec<Frame>, String> {
     // insert external references
     let extrefs = program
         .iter()
-        .filter(|frame| match frame.inner {
-            FrameInner::Directive(ref d) => match d {
-                directive::Directive::EXTREF(_) => true,
-                _ => false,
-            },
-            _ => false,
+        .filter(|frame| {
+            matches!(
+                frame.inner,
+                FrameInner::Directive(directive::Directive::EXTREF(_))
+            )
         })
         .cloned()
         .collect::<Vec<Frame>>();
@@ -64,36 +63,25 @@ pub fn resolve_symbols(program: Vec<Frame>) -> Result<Vec<Frame>, String> {
         let label = frame.label.clone();
 
         // resolve ORG expression
-        match &mut frame.inner {
-            FrameInner::Directive(d) => {
-                match d {
-                    Directive::ORG(ref mut org) => {
-                        if let Expression::Unsolved(ref mut e) = *org.address {
-                            if e.left == ExpressionOperand::Locctr {
-                                e.left = ExpressionOperand::Value(locctr.unwrap() as i32);
-                            }
-                        }
-                        org.address = evaluate(org.address.clone(), &mut symtab);
-                        org.address.eval_and_update();
-                    }
-                    _ => {}
-                }
-            },
-            _ => {}
-        };
-
-        // set locctr to the address of START or ORG
-        match frame.inner {
-            FrameInner::Directive(ref d) => {
-                if let directive::Directive::START(s) = d {
-                    locctr = Some(s.address);
-                    start = s.address;
-                }
-                if let directive::Directive::ORG(o) = d {
-                    locctr = Some(o.address.eval().unwrap() as u32);
+        if let FrameInner::Directive(Directive::ORG(ref mut org)) = frame.inner {
+            if let Expression::Unsolved(ref mut e) = *org.address {
+                if e.left == ExpressionOperand::Locctr {
+                    e.left = ExpressionOperand::Value(locctr.unwrap() as i32);
                 }
             }
-            _ => {}
+            org.address = evaluate(org.address.clone(), &mut symtab);
+            org.address.eval_and_update();
+        }
+
+        // set locctr to the address of START or ORG
+        if let FrameInner::Directive(ref d) = frame.inner {
+            if let directive::Directive::START(s) = d {
+                locctr = Some(s.address);
+                start = s.address;
+            }
+            if let directive::Directive::ORG(o) = d {
+                locctr = Some(o.address.eval().unwrap() as u32);
+            }
         }
 
         // resolve locctr
@@ -189,40 +177,36 @@ pub fn resolve_symbols(program: Vec<Frame>) -> Result<Vec<Frame>, String> {
     while i < program.len() {
         let frame = &mut program[i];
         match &mut frame.inner {
-            FrameInner::Instruction(i) => {
-                match i {
-                    instruction::Instruction::Format2(ref mut i) => {
-                        i.register1 = evaluate(i.register1.clone(), &mut symtab);
-                        i.register2 = evaluate(i.register2.clone(), &mut symtab);
-                    },
-                    instruction::Instruction::Format34(i) => {
-                        i.value = evaluate(i.value.clone(), &mut symtab);
-                    },
-                    _ => {}
+            FrameInner::Instruction(i) => match i {
+                instruction::Instruction::Format2(ref mut i) => {
+                    i.register1 = evaluate(i.register1.clone(), &mut symtab);
+                    i.register2 = evaluate(i.register2.clone(), &mut symtab);
                 }
+                instruction::Instruction::Format34(i) => {
+                    i.value = evaluate(i.value.clone(), &mut symtab);
+                }
+                _ => {}
             },
-            FrameInner::Directive(d) => {
-                match d {
-                    Directive::END(ref mut end) => {
-                        end.first = evaluate(end.first.clone(), &mut symtab);
-                    },
-                    Directive::WORD(ref mut word) => {
-                        word.word = evaluate(word.word.clone(), &mut symtab);
-                    },
-                    Directive::RESB(ref mut resb) => {
-                        resb.bytes = evaluate(resb.bytes.clone(), &mut symtab);
-                    }
-                    Directive::RESW(ref mut resw) => {
-                        resw.words = evaluate(resw.words.clone(), &mut symtab);
-                    }
-                    Directive::ORG(ref mut org) => {
-                        org.address = evaluate(org.address.clone(), &mut symtab);
-                    }
-                    Directive::BASE(ref mut base) => {
-                        base.address = evaluate(base.address.clone(), &mut symtab);
-                    }
-                    _ => {}
+            FrameInner::Directive(d) => match d {
+                Directive::END(ref mut end) => {
+                    end.first = evaluate(end.first.clone(), &mut symtab);
                 }
+                Directive::WORD(ref mut word) => {
+                    word.word = evaluate(word.word.clone(), &mut symtab);
+                }
+                Directive::RESB(ref mut resb) => {
+                    resb.bytes = evaluate(resb.bytes.clone(), &mut symtab);
+                }
+                Directive::RESW(ref mut resw) => {
+                    resw.words = evaluate(resw.words.clone(), &mut symtab);
+                }
+                Directive::ORG(ref mut org) => {
+                    org.address = evaluate(org.address.clone(), &mut symtab);
+                }
+                Directive::BASE(ref mut base) => {
+                    base.address = evaluate(base.address.clone(), &mut symtab);
+                }
+                _ => {}
             },
             _ => {}
         };
@@ -260,13 +244,11 @@ fn resolve(symtab: &mut HashMap<String, Box<Expression>>) {
                     }
                 }
 
-                if let Some(ref mut right) = expr.right {
-                    if let ExpressionOperand::Symbol(ref symbol) = right {
-                        if let Some(right) = cloned.get(symbol) {
-                            if let Expression::Resolved(right) = **right {
-                                expr.right = Some(ExpressionOperand::Value(right));
-                                updated = true;
-                            }
+                if let Some(ExpressionOperand::Symbol(ref symbol)) = expr.right {
+                    if let Some(right) = cloned.get(symbol) {
+                        if let Expression::Resolved(right) = **right {
+                            expr.right = Some(ExpressionOperand::Value(right));
+                            updated = true;
                         }
                     }
                 }
@@ -277,7 +259,10 @@ fn resolve(symtab: &mut HashMap<String, Box<Expression>>) {
     }
 }
 
-fn evaluate(mut expr: Box<Expression>, symtab: &mut HashMap<String, Box<Expression>>) -> Box<Expression> {
+fn evaluate(
+    mut expr: Box<Expression>,
+    symtab: &mut HashMap<String, Box<Expression>>,
+) -> Box<Expression> {
     if let Expression::Unsolved(ref mut expr) = *expr {
         if let ExpressionOperand::Symbol(ref symbol) = expr.left {
             if let Some(value) = symtab.get(symbol) {
@@ -296,7 +281,6 @@ fn evaluate(mut expr: Box<Expression>, symtab: &mut HashMap<String, Box<Expressi
                 }
             }
         }
-
     }
     expr.eval_and_update();
     expr
@@ -304,7 +288,9 @@ fn evaluate(mut expr: Box<Expression>, symtab: &mut HashMap<String, Box<Expressi
 
 #[cfg(test)]
 mod tests {
-    use crate::frameformer::{block::rearrange_blocks, section::split_into_sections, literal::dump_literals};
+    use crate::frameformer::{
+        block::rearrange_blocks, literal::dump_literals, section::split_into_sections,
+    };
 
     use super::*;
     use std::fs;
