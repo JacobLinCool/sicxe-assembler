@@ -10,6 +10,6 @@ fn main() {
         println!("{}", e);
         return;
     }
-    
+
     println!("{}", obj.unwrap());
 }

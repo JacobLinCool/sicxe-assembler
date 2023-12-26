@@ -283,7 +283,12 @@ impl FrameLike for Directive {
 impl Display for Directive {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Directive::START(s) => write!(f, "{name:<6}\tSTART\t{address:04X}", name = s.name, address = s.address),
+            Directive::START(s) => write!(
+                f,
+                "{name:<6}\tSTART\t{address:04X}",
+                name = s.name,
+                address = s.address
+            ),
             Directive::END(e) => write!(f, "      \tEND\t{}", e.first),
             Directive::BYTE(b) => {
                 let data = b

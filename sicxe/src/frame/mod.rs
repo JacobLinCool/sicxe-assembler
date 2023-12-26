@@ -23,7 +23,11 @@ pub trait FrameLike {
     /// If the operator is not recognized, return None.
     /// If the operator is recognized but the operand is invalid, return an error as a String.
     /// If the operator is recognized and the operand is valid, return the Frame.
-    fn parse(operator: &str, operand: Option<&str>, label: Option<&str>) -> Option<Result<Self, String>>
+    fn parse(
+        operator: &str,
+        operand: Option<&str>,
+        label: Option<&str>,
+    ) -> Option<Result<Self, String>>
     where
         Self: Sized;
 
@@ -57,8 +61,6 @@ impl Frame {
     pub fn from(inner: FrameInner, label: Option<String>, other: &Frame) -> Frame {
         let mut sources = other.sources().clone();
         sources.push(FrameSource::Frame(other.clone()));
-
-        
 
         Frame {
             sources,
@@ -148,7 +150,11 @@ impl Frame {
         }
     }
 
-    pub fn parse_inner(operator: &str, operand: Option<&str>, label: Option<&str>) -> Result<FrameInner, String> {
+    pub fn parse_inner(
+        operator: &str,
+        operand: Option<&str>,
+        label: Option<&str>,
+    ) -> Result<FrameInner, String> {
         if let Some(result) = Instruction::parse(operator, operand, label) {
             return result.map(FrameInner::Instruction);
         }

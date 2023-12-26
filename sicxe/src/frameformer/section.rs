@@ -55,7 +55,9 @@ pub fn split_into_sections(program: Vec<Frame>) -> Vec<Vec<Frame>> {
         if subroutine.len() > 1 {
             let subroutine_end = Frame::from(
                 FrameInner::Directive(Directive::END(END {
-                    first: Box::new(parse(subroutine.first().unwrap().label.as_deref().unwrap()).unwrap()),
+                    first: Box::new(
+                        parse(subroutine.first().unwrap().label.as_deref().unwrap()).unwrap(),
+                    ),
                 })),
                 None,
                 subroutine.first().unwrap(),

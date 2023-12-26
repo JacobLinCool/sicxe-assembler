@@ -76,7 +76,11 @@ impl FrameLike for Instruction {
         }
     }
 
-    fn parse(operator: &str, operand: Option<&str>, _label: Option<&str>) -> Option<Result<Self, String>> {
+    fn parse(
+        operator: &str,
+        operand: Option<&str>,
+        _label: Option<&str>,
+    ) -> Option<Result<Self, String>> {
         let is_format4 = operator.starts_with('+');
         let operator = operator.trim_start_matches('+');
         let format = match operator {
@@ -341,8 +345,8 @@ impl FrameLike for Instruction {
     fn expressions(&self) -> Option<Vec<&Expression>> {
         match self {
             Instruction::Format1(_) => None,
-            Instruction::Format2(f) => Some(vec![& f.register1, & f.register2]),
-            Instruction::Format34(f) => Some(vec![& f.value]),
+            Instruction::Format2(f) => Some(vec![&f.register1, &f.register2]),
+            Instruction::Format34(f) => Some(vec![&f.value]),
         }
     }
 }
@@ -355,9 +359,13 @@ impl Display for Instruction {
                 let r1 = i.register1.to_string().parse::<u8>().unwrap();
                 let r2 = i.register2.to_string().parse::<u8>().unwrap();
                 write!(f, "op: 0x{:02X}, r1: {:01X}, r2: {:01X}", i.opcode, r1, r2)
-            },
+            }
             Instruction::Format34(ref i) => {
-                write!(f, "op: 0x{:02X}, nixbpe: 0b{:06b}, value: {}", i.opcode, i.nixbpe, i.value)
+                write!(
+                    f,
+                    "op: 0x{:02X}, nixbpe: 0b{:06b}, value: {}",
+                    i.opcode, i.nixbpe, i.value
+                )
             }
         }
     }

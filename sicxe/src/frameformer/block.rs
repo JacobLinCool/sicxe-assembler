@@ -12,19 +12,35 @@ pub fn rearrange_blocks(programs: Vec<Frame>) -> Vec<Frame> {
     let end_frame = programs.last().unwrap();
     let extdefs = programs
         .iter()
-        .filter(|frame| matches!(frame.inner, FrameInner::Directive(directive::Directive::EXTDEF(_))))
+        .filter(|frame| {
+            matches!(
+                frame.inner,
+                FrameInner::Directive(directive::Directive::EXTDEF(_))
+            )
+        })
         .cloned()
         .collect::<Vec<Frame>>();
     let extrefs = programs
         .iter()
-        .filter(|frame| matches!(frame.inner, FrameInner::Directive(directive::Directive::EXTREF(_))))
+        .filter(|frame| {
+            matches!(
+                frame.inner,
+                FrameInner::Directive(directive::Directive::EXTREF(_))
+            )
+        })
         .cloned()
         .collect::<Vec<Frame>>();
 
     let rerrangables = programs
         .iter()
         .filter(|frame| match frame.inner {
-            FrameInner::Directive(ref d) => !matches!(d, directive::Directive::START(_) | directive::Directive::END(_) | directive::Directive::EXTDEF(_) | directive::Directive::EXTREF(_)),
+            FrameInner::Directive(ref d) => !matches!(
+                d,
+                directive::Directive::START(_)
+                    | directive::Directive::END(_)
+                    | directive::Directive::EXTDEF(_)
+                    | directive::Directive::EXTREF(_)
+            ),
             _ => true,
         })
         .cloned()

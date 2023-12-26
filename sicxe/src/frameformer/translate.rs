@@ -219,13 +219,13 @@ pub fn translate_to_record(program: Vec<Frame>) -> Result<Vec<ObjectRecord>, Str
                             } else if i.is_immediate() {
                                 if is_number {
                                     let nixbpe = i.nixbpe;
-                                    let disp = operand as i32;
+                                    let disp = operand;
                                     data.push(i.opcode | (nixbpe & 0b110000) >> 4);
                                     data.push(nixbpe << 4 | ((disp & 0b111100000000) >> 8) as u8);
                                     data.push(disp as u8);
                                 } else {
                                     let nixbpe = i.nixbpe | 0b000010;
-                                    let disp = operand as i32 - pc as i32;
+                                    let disp = operand - pc as i32;
                                     data.push(i.opcode | (nixbpe & 0b110000) >> 4);
                                     data.push(nixbpe << 4 | ((disp & 0b111100000000) >> 8) as u8);
                                     data.push(disp as u8);
@@ -256,7 +256,7 @@ pub fn translate_to_record(program: Vec<Frame>) -> Result<Vec<ObjectRecord>, Str
                             //     }
                             } else if i.is_indirect() {
                                 let nixbpe = i.nixbpe | 0b000010;
-                                let disp = operand as i32 - pc as i32;
+                                let disp = operand - pc as i32;
                                 data.push(i.opcode | (nixbpe & 0b110000) >> 4);
                                 data.push(nixbpe << 4 | ((disp & 0b111100000000) >> 8) as u8);
                                 data.push(disp as u8);
@@ -264,7 +264,7 @@ pub fn translate_to_record(program: Vec<Frame>) -> Result<Vec<ObjectRecord>, Str
                                 // calculate displacement
                                 let mut reachable = false;
                                 // try PC relative first
-                                let disp = operand as i32 - pc as i32;
+                                let disp = operand - pc as i32;
                                 if (-2048..=2047).contains(&disp) {
                                     let nixbpe = i.nixbpe | 0b110010;
                                     data.push(i.opcode | (nixbpe & 0b110000) >> 4);
@@ -273,7 +273,7 @@ pub fn translate_to_record(program: Vec<Frame>) -> Result<Vec<ObjectRecord>, Str
                                     reachable = true;
                                 } else if let Some(base) = base {
                                     // try BASE relative
-                                    let disp = operand as i32 - base as i32;
+                                    let disp = operand - base as i32;
                                     if (0..=4095).contains(&disp) {
                                         let nixbpe = i.nixbpe | 0b110100;
                                         data.push(i.opcode | (nixbpe & 0b110000) >> 4);
